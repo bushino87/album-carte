@@ -63,6 +63,7 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
 .set .logo{height:62px;width:100%;display:flex;align-items:center;justify-content:center}
 .set .logo img{max-height:62px;max-width:100%;object-fit:contain}
 .set .meta{width:100%}
+.tagen{position:absolute;top:8px;right:8px;z-index:2;background:var(--yellow);color:#4A3A00;font:800 11px var(--font-b);padding:3px 9px;border-radius:999px}
 .nologo{display:grid;place-items:center}
 .nologo svg{width:46px;height:46px;--ball-top:#C9D1E5;--ball-bot:#fff}
 .set.hero .nologo svg{--ball-top:rgba(255,255,255,.4);--ball-bot:rgba(255,255,255,.18);--ball-line:rgba(255,255,255,.65);--ball-btn:#0000}
@@ -411,7 +412,7 @@ const imgSrc=(c,q)=>c.img?`${c.img}/${q}.webp`:(c.imgEn?`${c.imgEn}/${q}.webp`:n
 
 /* ================= Router ================= */
 const view=$('#view');
-let routeToken=0, homeScroll=0, homeQ='', setsData=null, restored=false;
+let routeToken=0, homeScroll=0, homeQ='', setsData=null, enList=null, restored=false;
 let cur=null, flt='all', q='';
 
 function route(){
@@ -444,6 +445,8 @@ function showHome(){
   }));
   swr(`pkc.sets.${lang}`,()=>getJSON(`${API}/${lang}/sets`),d=>{ if(my!==routeToken) return; setsData=d; paintSets(); })
     .catch(e=>{ if(my===routeToken){ const el=$('#setlist'); if(el) el.innerHTML=errHTML(e&&e.message); } });
+  /* elenco inglese: serve per i loghi mancanti e per i set nuovi non ancora usciti in italiano */
+  if(lang!=='en') swr('pkc.sets.en',()=>getJSON(`${API}/en/sets`),d=>{ if(my!==routeToken) return; enList=d; paintSets(); }).catch(()=>{});
   if(!homeScroll) window.scrollTo(0,0);
 }
 function logoHTML(o){
@@ -464,7 +467,7 @@ function setTile(s,own,hero){
   const tot=(s.cardCount&&(s.cardCount.total||s.cardCount.official))||0;
   const pct=tot?Math.min(100,Math.round(own/tot*100)):0;
   return `<a class="set${hero?' hero':''}" href="#/set/${encodeURIComponent(s.id)}">
-    ${hero?'<svg class="wm"><use href="#ball"/></svg>':''}
+    ${hero?'<svg class="wm"><use href="#ball"/></svg>':''}${s.enOnly?'<span class="tagen">Solo inglese</span>':''}
     <div class="logo">${logoHTML(s)}</div>
     <div class="meta"><div class="snm">${esc(s.name)}</div><div class="bar"><i style="width:${pct}%"></i></div><div class="cnt">${own} su ${tot}</div></div>
   </a>`;
@@ -472,7 +475,12 @@ function setTile(s,own,hero){
 function paintSets(){
   const el=$('#setlist'); if(!el||!setsData) return;
   const own=ownedBySet(), nq=norm(homeQ.trim());
-  let list=[...setsData].reverse();
+  const lm={}; if(lang!=='en'&&enList) enList.forEach(x=>lm[x.id]=x);
+  const itIds=new Set(setsData.map(x=>x.id));
+  const base=[...setsData].reverse().map(x=>{ const e=lm[x.id]; return e?{...x,logo:x.logo||e.logo||null,symbol:x.symbol||e.symbol||null}:x; });
+  /* set recenti presenti solo in inglese: li metto in cima */
+  const extra=(lang!=='en'&&enList)?enList.slice(-10).filter(x=>!itIds.has(x.id)).reverse().map(x=>({...x,enOnly:true})):[];
+  let list=[...extra,...base];
   if(nq) list=list.filter(s=>norm(s.name).includes(nq)||norm(s.id).includes(nq));
   if(!list.length){ el.innerHTML='<div class="empty">Nessun set con questo nome.</div>'; return; }
   el.innerHTML='<div class="sets">'+list.map((s,i)=>setTile(s,own[s.id]||0,i===0&&!nq)).join('')+'</div>';
@@ -517,8 +525,10 @@ function counts(){
 function incNote(){
   if(!cur) return '';
   if(cur.real===0) return `<div class="inc">TCGdex non ha ancora le carte di questo set (IT ${cur.nIt}, EN ${cur.nEn}). Riprova tra qualche giorno.</div>`;
-  if(cur.cards.some(c=>c.ph)) return `<div class="inc">TCGdex ha ${cur.real} carte su ${cur.total} (IT ${cur.nIt}, EN ${cur.nEn}). Le altre sono segnaposto numerati: si riempiono da sole quando i dati arrivano.</div>`;
-  return '';
+  let h='';
+  if(cur.nIt===0&&lang!=='en') h+='<div class="inc">Questo set non è ancora in italiano su TCGdex: vedi le carte in inglese. Quando arriva l\'italiano si aggiorna da solo.</div>';
+  if(cur.cards.some(c=>c.ph)) h+=`<div class="inc">TCGdex ha ${cur.real} carte su ${cur.total} (IT ${cur.nIt}, EN ${cur.nEn}). Le altre sono segnaposto numerati: si riempiono da sole quando i dati arrivano.</div>`;
+  return h;
 }
 function paintBanner(){
   const el=$('#banner'); if(!el||!cur) return;
