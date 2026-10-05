@@ -63,6 +63,10 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
 .set .logo{height:62px;width:100%;display:flex;align-items:center;justify-content:center}
 .set .logo img{max-height:62px;max-width:100%;object-fit:contain}
 .set .meta{width:100%}
+.nologo{display:grid;place-items:center}
+.nologo svg{width:46px;height:46px;--ball-top:#C9D1E5;--ball-bot:#fff}
+.set.hero .nologo svg{--ball-top:rgba(255,255,255,.4);--ball-bot:rgba(255,255,255,.18);--ball-line:rgba(255,255,255,.65);--ball-btn:#0000}
+.logo img.sym,.b-logo img.sym{max-height:46px}
 .snm{font:400 16px/1.15 var(--font-d);margin-bottom:8px;overflow-wrap:anywhere}
 .cnt{font-size:13px;color:var(--mute);margin-top:6px}
 .bar{height:9px;border-radius:5px;background:#E1E8F5;overflow:hidden}
@@ -285,6 +289,7 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
       <a class="pill" id="vEbay" target="_blank" rel="noopener">eBay</a>
       <a class="pill" id="vVinted" target="_blank" rel="noopener">Vinted</a>
       <a class="pill" id="vCata" target="_blank" rel="noopener">Catawiki</a>
+      <a class="pill" id="vCm" target="_blank" rel="noopener">Cardmarket</a>
     </div>
     <div class="acts">
       <button class="act own" data-s="o"><svg><use href="#ball"/></svg>Ce l'ho</button>
@@ -399,7 +404,7 @@ async function fetchSet(id){
     cards.sort(cmp);
   }
   const S=okA?A:B;
-  return {id:S.id||id,name:S.name,nameEn:(okB?B.name:S.name),logo:(okA&&A.logo)||(okB&&B.logo)||null,
+  return {id:S.id||id,name:S.name,nameEn:(okB?B.name:S.name),logo:(okA&&A.logo)||(okB&&B.logo)||null,symbol:(okA&&A.symbol)||(okB&&B.symbol)||null,
     official:(S.cardCount&&S.cardCount.official)||0,total:Math.max(total,cards.length),real,nIt,nEn,cards};
 }
 const imgSrc=(c,q)=>c.img?`${c.img}/${q}.webp`:(c.imgEn?`${c.imgEn}/${q}.webp`:null);
@@ -441,12 +446,26 @@ function showHome(){
     .catch(e=>{ if(my===routeToken){ const el=$('#setlist'); if(el) el.innerHTML=errHTML(e&&e.message); } });
   if(!homeScroll) window.scrollTo(0,0);
 }
+function logoHTML(o){
+  const L=o&&o.logo, S=o&&o.symbol;
+  if(!L&&!S) return '<span class="nologo"><svg><use href="#ball"/></svg></span>';
+  if(!L) return `<img class="sym" src="${esc(S)}.webp" alt="" data-st="2" onerror="__lf(this)">`;
+  return `<img src="${esc(L)}.webp" alt="" loading="lazy" data-o="${esc(L)}" data-sym="${esc(S||'')}" onerror="__lf(this)">`;
+}
+/* logo mancante: prova la versione inglese, poi il simbolo, poi una Poké Ball */
+window.__lf=function(img){
+  const st=+img.dataset.st||0; img.dataset.st=st+1;
+  const o=img.dataset.o||'', sym=img.dataset.sym||'';
+  if(st===0&&o.indexOf('/it/')>-1){ img.src=o.replace('/it/','/en/')+'.webp'; return; }
+  if(st<=1&&sym){ img.classList.add('sym'); img.dataset.st=2; img.src=sym+'.webp'; return; }
+  const sp=document.createElement('span'); sp.className='nologo'; sp.innerHTML='<svg><use href="#ball"/></svg>'; img.replaceWith(sp);
+};
 function setTile(s,own,hero){
   const tot=(s.cardCount&&(s.cardCount.total||s.cardCount.official))||0;
   const pct=tot?Math.min(100,Math.round(own/tot*100)):0;
   return `<a class="set${hero?' hero':''}" href="#/set/${encodeURIComponent(s.id)}">
     ${hero?'<svg class="wm"><use href="#ball"/></svg>':''}
-    <div class="logo">${s.logo?`<img src="${esc(s.logo)}.webp" alt="" loading="lazy" onerror="this.remove()">`:''}</div>
+    <div class="logo">${logoHTML(s)}</div>
     <div class="meta"><div class="snm">${esc(s.name)}</div><div class="bar"><i style="width:${pct}%"></i></div><div class="cnt">${own} su ${tot}</div></div>
   </a>`;
 }
@@ -505,7 +524,7 @@ function paintBanner(){
   const el=$('#banner'); if(!el||!cur) return;
   const n=counts(), tot=n.all, pct=tot?n.own/tot*100:0;
   el.innerHTML=`
-    <div class="b-logo">${cur.logo?`<img src="${esc(cur.logo)}.webp" alt="" onerror="this.remove()">`:''}</div>
+    <div class="b-logo">${logoHTML(cur)}</div>
     <div class="b-txt">
       <h1>${esc(cur.name)}</h1>
       ${lang!=='en'&&cur.nameEn&&cur.nameEn!==cur.name?`<div class="sub">${esc(cur.nameEn)}</div>`:''}
@@ -631,6 +650,7 @@ function fillViewer(dir){
   const nm=c.en||c.it, sn=cur.nameEn||cur.name;
   $('#vEbay').href='https://www.ebay.it/sch/i.html?_nkw='+encodeURIComponent(`pokemon ${nm} ${c.n} ${sn}`);
   $('#vVinted').href='https://www.vinted.it/catalog?search_text='+encodeURIComponent(`pokemon ${nm} ${sn}`);
+  $('#vCm').href='https://www.cardmarket.com/it/Pokemon/Products/Search?searchString='+encodeURIComponent(nm);
   $('#vCata').href='https://www.catawiki.com/it/s?q='+encodeURIComponent(`pokemon ${nm} ${sn}`);
   syncActs();
   if(dir){ vTilt.style.setProperty('--from',dir>0?'62deg':'-62deg'); vTilt.classList.remove('swap'); void vTilt.offsetWidth; vTilt.classList.add('swap'); }
