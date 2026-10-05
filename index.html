@@ -137,6 +137,8 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
 .nm .n{color:var(--mute);font-weight:700;flex:none}
 .nm .it{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .en{min-height:14px;font-size:11px;line-height:1.25;color:var(--mute);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inc{margin-top:8px;font-size:12px;line-height:1.35;color:#7A5200;background:#FFF1BF;border-radius:10px;padding:7px 10px;font-weight:700}
+.err .why{font-size:12px;margin-top:6px;word-break:break-word}
 .empty,.err{grid-column:1/-1;text-align:center;color:var(--mute);padding:44px 18px}
 .err svg{width:54px;height:54px;margin:0 auto 12px;--ball-top:#B9C2D8}
 .btn{display:block;width:100%;border:0;border-radius:16px;padding:14px;font:800 16px var(--font-b);background:#fff;border:2px solid var(--line);color:var(--ink);margin-top:10px}
@@ -184,8 +186,10 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
 .v-info{position:relative;z-index:3;padding:10px 18px calc(16px + env(safe-area-inset-bottom));text-align:center}
 .v-it{font:400 27px/1.1 var(--font-d);margin:0;overflow-wrap:anywhere}
 .v-meta{color:#A9B6E6;font-size:13px;margin:3px 0 10px}
-.v-en{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.v-en .lbl{font-size:13px;color:#A9B6E6}
+.v-en,.v-find{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:9px}
+.v-find{margin-bottom:12px}
+.v-en .lbl,.v-find .lbl{font-size:13px;color:#A9B6E6}
+.viewer.isph .v-en,.viewer.isph .v-find{display:none}
 .v-en .nmn{font:800 17px var(--font-b);color:var(--yellow)}
 .pill{border:0;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;padding:7px 13px;font:800 13px var(--font-b);display:inline-flex;align-items:center;gap:6px}
 .pill svg{width:15px;height:15px}
@@ -275,7 +279,12 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
     <div class="v-en">
       <span class="lbl">In inglese</span><span class="nmn" id="vEn"></span>
       <button class="pill" id="vCopy"><svg><use href="#copy"/></svg>Copia</button>
-      <a class="pill" id="vEbay" target="_blank" rel="noopener"><svg><use href="#search"/></svg>eBay</a>
+    </div>
+    <div class="v-find">
+      <span class="lbl">Cerca su</span>
+      <a class="pill" id="vEbay" target="_blank" rel="noopener">eBay</a>
+      <a class="pill" id="vVinted" target="_blank" rel="noopener">Vinted</a>
+      <a class="pill" id="vCata" target="_blank" rel="noopener">Catawiki</a>
     </div>
     <div class="acts">
       <button class="act own" data-s="o"><svg><use href="#ball"/></svg>Ce l'ho</button>
@@ -295,6 +304,7 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
     <button class="btn" id="bImport">Carica backup</button>
     <input type="file" id="fImport" accept="application/json,.json" hidden>
     <button class="btn" id="bRefresh">Ricarica i dati dal server</button>
+    <p class="note">Elenchi e immagini delle carte arrivano da TCGdex (tcgdex.dev), un database gratuito mantenuto da volontari: i set nuovi possono arrivare con qualche giorno di ritardo.</p>
     <p class="note">Le tue carte sono salvate solo su questo dispositivo. Salva un backup ogni tanto e caricalo se cambi telefono o browser.</p>
     <button class="btn" id="bClose">Chiudi</button>
   </div>
@@ -357,16 +367,40 @@ function ownedBySet(){
 /* ================= Dati ================= */
 let lang=LS.get('pkc.lang')||'it';
 async function fetchSet(id){
-  const reqs=[getJSON(`${API}/${lang}/sets/${encodeURIComponent(id)}`)];
-  if(lang!=='en') reqs.push(getJSON(`${API}/en/sets/${encodeURIComponent(id)}`).catch(()=>null));
-  const [a,b]=await Promise.all(reqs);
-  const enMap={}; if(b&&b.cards) b.cards.forEach(c=>enMap[c.id]=c);
-  const cards=(a.cards||[]).map(c=>{
-    const e=enMap[c.id];
-    return {id:c.id,n:c.localId,it:c.name||'',en:(e&&e.name)||c.name||'',img:c.image||null,imgEn:(e&&e.image)||null};
+  const url=l=>`${API}/${l}/sets/${encodeURIComponent(id)}`;
+  const safe=u=>getJSON(u).catch(e=>({__err:String((e&&e.message)||e)}));
+  const [A,B]=await Promise.all([safe(url(lang)), lang==='en'?Promise.resolve(null):safe(url('en'))]);
+  const okA=!!A&&!A.__err, okB=!!B&&!B.__err;
+  if(!okA&&!okB) throw new Error((A&&A.__err)||'nessuna risposta dal server');
+  const nIt=okA?(A.cards||[]).length:0;
+  const nEn=okB?(B.cards||[]).length:(lang==='en'?nIt:0);
+  const map=new Map();
+  if(okA) (A.cards||[]).forEach(c=>map.set(c.id,{id:c.id,n:String(c.localId),it:c.name||'',en:c.name||'',img:c.image||null,imgEn:null,ph:false}));
+  if(okB) (B.cards||[]).forEach(c=>{
+    const e=map.get(c.id);
+    if(e){ e.en=c.name||e.en; e.imgEn=c.image||null; if(!e.it) e.it=e.en; }
+    else map.set(c.id,{id:c.id,n:String(c.localId),it:c.name||'',en:c.name||'',img:null,imgEn:c.image||null,ph:false});
   });
-  return {id:a.id,name:a.name,nameEn:(b&&b.name)||a.name,logo:a.logo||(b&&b.logo)||null,
-    official:(a.cardCount&&a.cardCount.official)||0,total:(a.cardCount&&a.cardCount.total)||cards.length,cards};
+  const cmp=(x,y)=>x.n.localeCompare(y.n,undefined,{numeric:true});
+  const cards=[...map.values()].sort(cmp);
+  const real=cards.length;
+  const cc=o=>(o&&o.cardCount&&o.cardCount.total)||0;
+  const total=Math.max(cc(A),cc(B),real);
+  const nums=cards.filter(c=>/^\d+$/.test(c.n));
+  /* se TCGdex ha solo una parte delle carte, completo con segnaposto numerati */
+  if(real&&total>real&&total<=600&&nums.length>=real*.8){
+    const have=new Set(nums.map(c=>parseInt(c.n,10)));
+    const padded=nums.filter(c=>c.n.length>1&&c.n[0]==='0');
+    const pad=padded.length?Math.max(...padded.map(c=>c.n.length)):0;
+    for(let i=1;i<=total;i++) if(!have.has(i)){
+      const n=pad?String(i).padStart(pad,'0'):String(i);
+      cards.push({id:`${id}-${n}`,n,it:'Carta '+n,en:'',img:null,imgEn:null,ph:true});
+    }
+    cards.sort(cmp);
+  }
+  const S=okA?A:B;
+  return {id:S.id||id,name:S.name,nameEn:(okB?B.name:S.name),logo:(okA&&A.logo)||(okB&&B.logo)||null,
+    official:(S.cardCount&&S.cardCount.official)||0,total:Math.max(total,cards.length),real,nIt,nEn,cards};
 }
 const imgSrc=(c,q)=>c.img?`${c.img}/${q}.webp`:(c.imgEn?`${c.imgEn}/${q}.webp`:null);
 
@@ -382,7 +416,7 @@ function route(){
 window.addEventListener('hashchange',()=>{ if(V.open) closeViewer(true,true); route(); });
 window.addEventListener('popstate',()=>{ if(V.open&&!(history.state&&history.state.viewer)) closeViewer(true); });
 
-const errHTML=()=>`<div class="err"><svg><use href="#ball"/></svg><div>Non riesco a contattare TCGdex. Controlla la connessione e riprova.</div><button class="btn retry">Riprova</button></div>`;
+const errHTML=m=>`<div class="err"><svg><use href="#ball"/></svg><div>Non riesco a caricare i dati da TCGdex. Controlla la connessione e riprova.</div>${m?`<div class="why">Dettaglio: ${esc(m)}</div>`:''}<button class="btn retry">Riprova</button></div>`;
 view.addEventListener('click',e=>{
   if(e.target.closest('.retry')) route();
   const a=e.target.closest('a.set'); if(a) homeScroll=window.scrollY;
@@ -404,7 +438,7 @@ function showHome(){
     if(b.dataset.l===lang) return; lang=b.dataset.l; LS.set('pkc.lang',lang); homeScroll=0; showHome();
   }));
   swr(`pkc.sets.${lang}`,()=>getJSON(`${API}/${lang}/sets`),d=>{ if(my!==routeToken) return; setsData=d; paintSets(); })
-    .catch(()=>{ if(my===routeToken){ const el=$('#setlist'); if(el) el.innerHTML=errHTML(); } });
+    .catch(e=>{ if(my===routeToken){ const el=$('#setlist'); if(el) el.innerHTML=errHTML(e&&e.message); } });
   if(!homeScroll) window.scrollTo(0,0);
 }
 function setTile(s,own,hero){
@@ -448,18 +482,24 @@ function showSet(id){
     if(im.dataset.alt&&im.src!==im.dataset.alt){ im.src=im.dataset.alt; im.dataset.alt=''; }
     else { im.parentElement.classList.add('bad'); }
   },true);
-  swr(`pkc.set.${lang}.${id}`,()=>fetchSet(id),d=>{
+  swr(`pkc.set.v2.${lang}.${id}`,()=>fetchSet(id),d=>{
     if(my!==routeToken) return;
     cur=d;
     if(V.open){ V.dirty=true; return; }
     paintBanner(); paintChips(); paintGrid();
-  }).catch(()=>{ if(my===routeToken){ const g=$('#grid'); if(g) g.innerHTML=errHTML(); } });
+  }).catch(e=>{ if(my===routeToken){ const g=$('#grid'); if(g) g.innerHTML=errHTML(e&&e.message); } });
 }
 let lastPct=0;
 function counts(){
   const n={all:0,miss:0,own:0,want:0,skip:0};
   (cur?cur.cards:[]).forEach(c=>{ const s=st(c.id); n.all++; if(s==='o')n.own++; else if(s==='w'){n.want++;n.miss++} else if(s==='x')n.skip++; else n.miss++; });
   return n;
+}
+function incNote(){
+  if(!cur) return '';
+  if(cur.real===0) return `<div class="inc">TCGdex non ha ancora le carte di questo set (IT ${cur.nIt}, EN ${cur.nEn}). Riprova tra qualche giorno.</div>`;
+  if(cur.cards.some(c=>c.ph)) return `<div class="inc">TCGdex ha ${cur.real} carte su ${cur.total} (IT ${cur.nIt}, EN ${cur.nEn}). Le altre sono segnaposto numerati: si riempiono da sole quando i dati arrivano.</div>`;
+  return '';
 }
 function paintBanner(){
   const el=$('#banner'); if(!el||!cur) return;
@@ -470,7 +510,7 @@ function paintBanner(){
       <h1>${esc(cur.name)}</h1>
       ${lang!=='en'&&cur.nameEn&&cur.nameEn!==cur.name?`<div class="sub">${esc(cur.nameEn)}</div>`:''}
       <div class="bar"><i style="width:${lastPct}%"></i></div>
-      <div class="row"><span><b>${n.own}</b> su ${tot}</span>${n.want?`<span class="w">${n.want} da cercare</span>`:''}${tot&&n.own===tot?'<span class="done">Set completo!</span>':''}</div>
+      ${incNote()}<div class="row"><span><b>${n.own}</b> su ${tot}</span>${n.want?`<span class="w">${n.want} da cercare</span>`:''}${tot&&n.own===tot?'<span class="done">Set completo!</span>':''}</div>
     </div>`;
   const bar=el.querySelector('.bar i');
   requestAnimationFrame(()=>requestAnimationFrame(()=>{ bar.style.width=pct+'%'; lastPct=pct; }));
@@ -498,6 +538,7 @@ function filtered(){
 function cdHTML(c){
   const src=imgSrc(c,'low'), alt=(c.img&&c.imgEn)?`${c.imgEn}/low.webp`:'';
   const showEn=lang!=='en'&&c.en&&norm(c.en)!==norm(c.it);
+  const sub=c.ph?'dati in arrivo':(showEn?esc(c.en):'');
   return `<div class="cd" data-id="${esc(c.id)}" data-s="${st(c.id)}">
     <div class="im${src?'':' bad'}">
       ${src?`<img loading="lazy" decoding="async" alt="${esc(c.it)}" src="${esc(src)}" data-alt="${esc(alt)}">`:''}
@@ -506,13 +547,13 @@ function cdHTML(c){
       <button class="ownbtn" aria-label="Ce l'ho"><svg><use href="#ball"/></svg></button>
     </div>
     <div class="nm"><span class="n">${esc(c.n)}</span><span class="it">${esc(c.it)}</span></div>
-    <div class="en">${showEn?esc(c.en):''}</div>
+    <div class="en">${sub}</div>
   </div>`;
 }
 function paintGrid(){
   const g=$('#grid'); if(!g||!cur) return;
   const list=filtered();
-  g.innerHTML=list.length?list.map(cdHTML).join(''):'<div class="empty">Nessuna carta qui. Cambia filtro o cerca un altro nome.</div>';
+  g.innerHTML=list.length?list.map(cdHTML).join(''):(cur.cards.length?'<div class="empty">Nessuna carta qui. Cambia filtro o cerca un altro nome.</div>':'<div class="empty">Questo set non ha ancora carte nel database.</div>');
 }
 const byId=id=>cur&&cur.cards.find(c=>c.id===id);
 const gridCard=id=>{const g=$('#grid');return g&&[...g.children].find(x=>x.dataset.id===id)};
@@ -583,10 +624,14 @@ function fillViewer(dir){
   } else vTilt.classList.add('bad');
   $('#vIt').textContent=c.it;
   $('#vEn').textContent=c.en||c.it;
-  $('#vMeta').textContent=`Carta ${c.n} su ${cur.official||cur.total}, ${cur.name}`;
+  viewer.classList.toggle('isph',!!c.ph);
+  $('#vMeta').textContent=c.ph?`Carta ${c.n} su ${cur.total}. Dettagli non ancora disponibili, ma puoi segnarla.`:`Carta ${c.n} su ${cur.official||cur.total}, ${cur.name}`;
   $('#vCount').textContent=`${V.i+1} di ${V.list.length}`;
   $('#vPrev').disabled=V.i===0; $('#vNext').disabled=V.i===V.list.length-1;
-  $('#vEbay').href='https://www.ebay.it/sch/i.html?_nkw='+encodeURIComponent(`pokemon ${c.en||c.it} ${c.n} ${cur.nameEn||cur.name}`);
+  const nm=c.en||c.it, sn=cur.nameEn||cur.name;
+  $('#vEbay').href='https://www.ebay.it/sch/i.html?_nkw='+encodeURIComponent(`pokemon ${nm} ${c.n} ${sn}`);
+  $('#vVinted').href='https://www.vinted.it/catalog?search_text='+encodeURIComponent(`pokemon ${nm} ${sn}`);
+  $('#vCata').href='https://www.catawiki.com/it/s?q='+encodeURIComponent(`pokemon ${nm} ${sn}`);
   syncActs();
   if(dir){ vTilt.style.setProperty('--from',dir>0?'62deg':'-62deg'); vTilt.classList.remove('swap'); void vTilt.offsetWidth; vTilt.classList.add('swap'); }
 }
