@@ -218,6 +218,39 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
 .sheet-bg{position:absolute;inset:0;background:rgba(10,14,39,.55)}
 .sheet-card{position:relative;width:100%;max-width:520px;background:var(--paper);border-radius:26px 26px 0 0;padding:22px 18px calc(18px + env(safe-area-inset-bottom));animation:up .3s cubic-bezier(.2,.9,.3,1)}
 @keyframes up{from{transform:translateY(40px);opacity:0}}
+/* ricerca carta */
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#fff;border:2px solid var(--line);border-radius:23px;padding:3px;margin-bottom:12px}
+.tabs a{text-align:center;padding:10px 6px;border-radius:19px;font:800 14px var(--font-b);color:var(--mute)}
+.tabs a.on{background:var(--ink);color:#fff}
+.ssum{color:var(--mute);font-size:13px;margin:4px 2px 12px}
+.srow{background:#fff;border:2px solid var(--line);border-radius:20px;padding:12px 12px 10px;margin-bottom:12px;cursor:pointer;transition:transform .15s}
+.srow:active{transform:scale(.985)}
+.shead{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.slogo{flex:0 0 84px;height:44px;display:flex;align-items:center;justify-content:center}
+.slogo img{max-height:44px;max-width:100%;object-fit:contain}
+.slogo .nologo svg{width:34px;height:34px}
+.stx{flex:1;min-width:0}
+.stx .sn{font:400 17px/1.15 var(--font-d);overflow-wrap:anywhere}
+.stx .ss{font-size:12px;color:var(--mute);margin-top:2px}
+.schev{color:var(--mute);font:800 22px/1 var(--font-b)}
+.sthumbs{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 6px}
+.sthumbs::-webkit-scrollbar{display:none}
+.th{flex:none;width:76px}
+.tim{position:relative;aspect-ratio:245/337;border-radius:6%/4.4%;background:linear-gradient(110deg,#D9E1F2 30%,#EDF1FA 50%,#D9E1F2 70%);background-size:220% 100%;animation:sk 1.5s linear infinite}
+.tim img{display:block;width:100%;height:100%;object-fit:contain;border-radius:inherit}
+.tim.ld{animation:none;background:transparent}
+.tim.bad{animation:none;background:linear-gradient(150deg,#2A4FA8,#1A2766);box-shadow:inset 0 0 0 3px #FFCB05}
+.tim.bad img{display:none}
+.thw{position:absolute;right:-5px;bottom:-5px;width:28px;height:28px;border-radius:50%;border:0;background:#fff;color:#B9C2D8;padding:0;display:grid;place-items:center;box-shadow:0 2px 6px rgba(20,26,56,.3)}
+.thw::before{content:"";position:absolute;inset:-8px}
+.thw svg{width:16px;height:16px}
+.th[data-s="w"] .thw{background:var(--yellow);color:#6B4F00}
+.tho{display:none;position:absolute;left:-4px;top:-4px;width:22px;height:22px;border-radius:50%;background:#fff;place-items:center;box-shadow:0 2px 6px rgba(20,26,56,.3)}
+.tho svg{width:16px;height:16px}
+.th[data-s="o"] .tho{display:grid}
+.tnm{margin-top:6px;font-size:11px;line-height:1.2;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ten{font-size:10px;line-height:1.2;color:var(--mute);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:12px}
+.thmore{flex:none;width:76px;display:grid;place-items:center;aspect-ratio:245/337;border-radius:6%/4.4%;background:#EAF0F9;color:var(--mute);font:800 14px var(--font-b);text-align:center}
 /* lista desideri */
 .hbtns{display:flex;gap:8px}
 .iconbtn.wl{position:relative;color:var(--yellow)}
@@ -381,7 +414,7 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
   <div class="sheet-bg" id="sheetBg"></div>
   <div class="sheet-card">
     <h2>Il tuo album</h2>
-    <p class="note" style="margin:0 0 6px">Versione del 7 ottobre, n. 10</p>
+    <p class="note" style="margin:0 0 6px">Versione del 7 ottobre, n. 11</p>
     <p id="sumTxt"></p>
     <button class="btn pri" id="bExport">Salva backup</button>
     <button class="btn" id="bImport">Carica backup</button>
@@ -498,7 +531,7 @@ let mode='home';
 function route(){
   const parts=location.hash.replace(/^#\/?/,'').split('/');
   updWishN();
-  if(parts[0]==='set'&&parts[1]) showSet(decodeURIComponent(parts[1])); else if(parts[0]==='wish') showWish(); else showHome();
+  if(parts[0]==='set'&&parts[1]) showSet(decodeURIComponent(parts[1]),parts[2]==='q'?decodeURIComponent(parts[3]||''):''); else if(parts[0]==='wish') showWish(); else if(parts[0]==='cerca') showSearch(); else showHome();
 }
 window.addEventListener('hashchange',()=>{ if(V.open) closeViewer(true,true); route(); });
 window.addEventListener('popstate',()=>{ if(V.open&&!(history.state&&history.state.viewer)) closeViewer(true); });
@@ -513,6 +546,7 @@ view.addEventListener('click',e=>{
 function showHome(){
   const my=++routeToken; mode='home'; restored=false; setsData=null;
   view.innerHTML=`
+    <div class="tabs"><a href="#/" class="on">Espansioni</a><a href="#/cerca">Cerca una carta</a></div>
     <div class="tools">
       <input id="hq" class="search" type="search" enterkeyhint="search" placeholder="Cerca un set" autocomplete="off" value="${esc(homeQ)}" aria-label="Cerca un set">
       <div class="seg" role="group" aria-label="Lingua dei set">
@@ -595,12 +629,12 @@ function paintSets(){
 }
 
 /* ================= Pagina set ================= */
-function showSet(id){
-  const my=++routeToken; mode='set'; flt='all'; q=''; cur=null;
+function showSet(id,q0){
+  const my=++routeToken; mode='set'; flt='all'; q=q0||''; cur=null;
   view.innerHTML=`
-    <a class="back" href="#/">‹ Tutti i set</a>
+    ${q0?'<a class="back" href="#/cerca">‹ Risultati della ricerca</a>':'<a class="back" href="#/">‹ Tutti i set</a>'}
     <div class="banner" id="banner"><div class="sk-set" style="width:100%;height:70px"></div></div>
-    <input id="cq" class="search" type="search" enterkeyhint="search" placeholder="Cerca per nome o numero" autocomplete="off" aria-label="Cerca una carta" style="width:100%">
+    <input id="cq" class="search" type="search" enterkeyhint="search" placeholder="Cerca per nome o numero" autocomplete="off" aria-label="Cerca una carta" value="${esc(q)}" style="width:100%">
     <div class="fbar"><div class="chips" id="chips"></div></div>
     <div class="cards" id="grid">${'<div class="cd"><div class="im"></div></div>'.repeat(12)}</div>`;
   window.scrollTo(0,0);
@@ -842,6 +876,135 @@ const endDrag=()=>{ drag=null; resetTilt(); };
 vStage.addEventListener('pointerup',endDrag);
 vStage.addEventListener('pointercancel',endDrag);
 vStage.addEventListener('pointerleave',e=>{ if(!drag&&e.pointerType==='mouse') resetTilt(); });
+
+/* ================= Ricerca carta ================= */
+let sq='', sKey='', sGroups=null, sScroll=0, sTok=0;
+async function getSetLists(){
+  const get=async l=>{
+    const c=LS.get('pkc.sets.'+l); if(c&&Array.isArray(c.d)) return c.d;
+    const d=await getJSON(`${API}/${l}/sets`); cacheSet('pkc.sets.'+l,d); return d;
+  };
+  const a=await get(lang);
+  const b=lang==='en'?a:await get('en').catch(()=>[]);
+  return [a,b];
+}
+async function buildSearch(text){
+  const t=encodeURIComponent(text);
+  const safe=u=>getJSON(u).catch(e=>{ const m=String((e&&e.message)||e); return m==='HTTP 404'?[]:{__err:m}; });
+  const [A,B,lists]=await Promise.all([
+    safe(`${API}/${lang}/cards?name=${t}`),
+    lang==='en'?Promise.resolve(null):safe(`${API}/en/cards?name=${t}`),
+    getSetLists().catch(()=>[[],[]])
+  ]);
+  const okA=Array.isArray(A), okB=Array.isArray(B);
+  if(!okA&&!okB) throw new Error((A&&A.__err)||'nessuna risposta dal server');
+  const map=new Map();
+  if(okA) A.forEach(c=>{ if(c&&c.id) map.set(c.id,{id:c.id,n:String(c.localId),it:c.name||'',en:lang==='en'?(c.name||''):'',img:c.image||null,imgEn:null}); });
+  if(okB) B.forEach(c=>{
+    if(!c||!c.id) return;
+    const e=map.get(c.id);
+    if(e){ e.en=c.name||e.en; e.imgEn=c.image||null; }
+    else map.set(c.id,{id:c.id,n:String(c.localId),it:'',en:c.name||'',img:null,imgEn:c.image||null});
+  });
+  if(map.size>1500) return {groups:[],total:map.size,tooMany:true};
+  const [la,lb]=lists, ma={}, mb={}, ord={};
+  (la||[]).forEach(x=>{ma[x.id]=x});
+  (lb||[]).forEach(x=>{mb[x.id]=x});
+  (lb&&lb.length?lb:la||[]).forEach((x,i)=>{ord[x.id]=i});
+  const by={};
+  map.forEach(c=>{
+    const k=c.id.lastIndexOf('-'); if(k<1) return;
+    if(!c.it) c.it=c.en;
+    const sid=c.id.slice(0,k);
+    (by[sid]=by[sid]||[]).push(c);
+  });
+  const groups=Object.keys(by).map(sid=>{
+    const a=ma[sid], b=mb[sid], lc=logoCache[sid]||{};
+    return {setId:sid,setName:(a&&a.name)||(b&&b.name)||sid,setNameEn:(b&&b.name)||(a&&a.name)||sid,enOnly:!a&&!!b,
+      logo:(a&&a.logo)||(b&&b.logo)||lc.logo||null,symbol:(a&&a.symbol)||(b&&b.symbol)||lc.symbol||null,
+      idx:ord[sid]??-1,cards:by[sid].sort((x,y)=>numCmp(x.n,y.n))};
+  }).sort((x,y)=>(y.idx-x.idx)||x.setName.localeCompare(y.setName));
+  return {groups,total:map.size,tooMany:false};
+}
+function thumbHTML(c){
+  const src=imgSrc(c,'low'), alt=(c.img&&c.imgEn)?`${c.imgEn}/low.webp`:'';
+  const showEn=c.en&&norm(c.en)!==norm(c.it);
+  return `<div class="th" data-id="${esc(c.id)}" data-s="${st(c.id)}">
+    <div class="tim${src?'':' bad'}">${src?`<img loading="lazy" decoding="async" alt="${esc(c.it)}" src="${esc(src)}" data-alt="${esc(alt)}">`:''}
+      <span class="tho"><svg><use href="#ball"/></svg></span>
+      <button class="thw" type="button" aria-label="Da cercare"><svg><use href="#star"/></svg></button></div>
+    <div class="tnm">${esc(c.n)} ${esc(c.it)}</div><div class="ten">${showEn?esc(c.en):''}</div></div>`;
+}
+function rowHTML(g){
+  const shown=g.cards.slice(0,12), more=g.cards.length-shown.length;
+  const nm=g.cards.length;
+  return `<div class="srow" data-set="${esc(g.setId)}">
+    <div class="shead"><div class="slogo">${logoHTML(g)}</div>
+      <div class="stx"><div class="sn">${esc(g.setName)}</div><div class="ss">${g.setNameEn&&g.setNameEn!==g.setName?esc(g.setNameEn)+' · ':''}${nm} ${nm===1?'carta':'carte'}${g.enOnly?' · solo inglese':''}</div></div>
+      <span class="schev">›</span></div>
+    <div class="sthumbs">${shown.map(thumbHTML).join('')}${more>0?`<div class="thmore">+${more}<br>altre</div>`:''}</div>
+  </div>`;
+}
+function paintSearch(){
+  const res=$('#sres'); if(!res||!sGroups) return;
+  const g=sGroups;
+  if(g.tooMany){ res.innerHTML=`<div class="empty">Troppi risultati (${g.total}). Scrivi più lettere del nome.</div>`; return; }
+  if(!g.groups.length){ res.innerHTML='<div class="empty">Nessuna carta trovata con questo nome. Prova a scriverlo in inglese o in modo più corto.</div>'; return; }
+  const nc=g.groups.reduce((a,x)=>a+x.cards.length,0);
+  res.innerHTML=`<div class="ssum">${nc} ${nc===1?'carta trovata':'carte trovate'} in ${g.groups.length} ${g.groups.length===1?'espansione':'espansioni'}. Tocca un'espansione per aprirla; la stella aggiunge la carta alla lista desideri.</div>`+g.groups.map(rowHTML).join('');
+}
+async function runSearch(my,restore){
+  const res=$('#sres'); if(!res) return;
+  const text=sq.trim();
+  if(text.length<3){ sKey=''; sGroups=null; res.innerHTML='<div class="empty">Scrivi almeno 3 lettere del nome della carta. Cerco sia in italiano sia in inglese.</div>'; return; }
+  const key=lang+'|'+norm(text);
+  if(key===sKey&&sGroups){ paintSearch(); if(restore&&sScroll){ window.scrollTo(0,sScroll); sScroll=0; } return; }
+  const tok=++sTok;
+  res.innerHTML='<div class="sk-set" style="height:170px;margin-bottom:12px"></div><div class="sk-set" style="height:170px"></div>';
+  try{
+    const g=await buildSearch(text);
+    if(tok!==sTok||my!==routeToken) return;
+    sKey=key; sGroups=g; paintSearch();
+  }catch(e){
+    if(tok!==sTok||my!==routeToken) return;
+    res.innerHTML=errHTML(e&&e.message);
+  }
+}
+function showSearch(){
+  const my=++routeToken; mode='search'; cur=null;
+  view.innerHTML=`
+    <div class="tabs"><a href="#/">Espansioni</a><a href="#/cerca" class="on">Cerca una carta</a></div>
+    <div class="tools"><input id="sq" class="search" type="search" enterkeyhint="search" placeholder="Nome della carta, italiano o inglese" autocomplete="off" value="${esc(sq)}" aria-label="Nome della carta"></div>
+    <div id="sres"></div>`;
+  window.scrollTo(0,0);
+  const inp=$('#sq'), res=$('#sres');
+  let timer;
+  const go=()=>{ sq=inp.value; runSearch(my,false); };
+  inp.addEventListener('input',()=>{ clearTimeout(timer); timer=setTimeout(go,450); });
+  inp.addEventListener('search',()=>{ clearTimeout(timer); go(); });
+  res.addEventListener('click',e=>{
+    const w=e.target.closest('.thw');
+    if(w){
+      e.stopPropagation();
+      const th=w.closest('.th'), id=th.dataset.id, cs=st(id);
+      if(cs==='o'){ toast('Questa carta ce l\'hai già'); return; }
+      const ns=cs==='w'?'':'w';
+      setStatus(id,ns); th.dataset.s=ns;
+      toast(ns==='w'?'Aggiunta alla lista desideri':'Tolta dalla lista desideri');
+      return;
+    }
+    const row=e.target.closest('.srow'); if(!row) return;
+    sScroll=window.scrollY;
+    location.hash='#/set/'+encodeURIComponent(row.dataset.set)+'/q/'+encodeURIComponent(sq.trim());
+  });
+  res.addEventListener('load',e=>{ if(e.target.tagName==='IMG'&&e.target.parentElement.classList.contains('tim')) e.target.parentElement.classList.add('ld'); },true);
+  res.addEventListener('error',e=>{
+    const im=e.target; if(im.tagName!=='IMG'||!im.parentElement.classList.contains('tim')) return;
+    if(im.dataset.alt&&im.src!==im.dataset.alt){ im.src=im.dataset.alt; im.dataset.alt=''; }
+    else im.parentElement.classList.add('bad');
+  },true);
+  runSearch(my,true);
+}
 
 /* ================= Lista desideri ================= */
 let wq='', wset='all', wsort=LS.get('pkc.wsort')||'set', wishCur=null, wfail=0;
