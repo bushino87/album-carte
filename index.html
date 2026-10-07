@@ -218,6 +218,24 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
 .sheet-bg{position:absolute;inset:0;background:rgba(10,14,39,.55)}
 .sheet-card{position:relative;width:100%;max-width:520px;background:var(--paper);border-radius:26px 26px 0 0;padding:22px 18px calc(18px + env(safe-area-inset-bottom));animation:up .3s cubic-bezier(.2,.9,.3,1)}
 @keyframes up{from{transform:translateY(40px);opacity:0}}
+/* lista desideri */
+.hbtns{display:flex;gap:8px}
+.iconbtn.wl{position:relative;color:var(--yellow)}
+.cbadge{display:none;position:absolute;top:-4px;right:-5px;min-width:20px;height:20px;border-radius:10px;background:var(--yellow);color:var(--ink);
+  border:2px solid var(--red);font:800 11px/16px var(--font-b);text-align:center;padding:0 4px;box-sizing:border-box}
+.wishbtn{position:absolute;right:-7px;top:-7px;width:32px;height:32px;border-radius:50%;border:0;background:#fff;padding:0;display:grid;place-items:center;
+  box-shadow:0 2px 8px rgba(20,26,56,.28);color:#B9C2D8}
+.wishbtn::before{content:"";position:absolute;inset:-6px}
+.wishbtn svg{width:19px;height:19px}
+.cd[data-s="w"] .wishbtn{background:var(--yellow);color:#6B4F00}
+.cd[data-s="w"] .badge{display:none}
+.wishbtn.pop svg{animation:pop .45s cubic-bezier(.2,1.8,.4,1)}
+.setl{font-size:10px;line-height:1.25;color:#8791B0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ghead{grid-column:1/-1;display:flex;align-items:baseline;gap:8px;margin-top:10px;font:400 19px/1.15 var(--font-d)}
+.ghead b{font:800 13px var(--font-b);color:var(--mute)}
+.chip .cl{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wtools{display:flex;gap:10px;align-items:center;margin-bottom:4px}
+.wbanner .b-logo{flex:0 0 18%}
 /* registro prezzi */
 .pbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;max-width:420px;margin:0 auto 10px;border:2px solid rgba(255,255,255,.18);
   background:rgba(255,255,255,.08);color:#fff;border-radius:16px;padding:11px 12px;font:800 14px var(--font-b)}
@@ -283,7 +301,10 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
 <header class="top">
   <div class="top-row">
     <h1 class="wordmark">Album Carte</h1>
-    <button class="iconbtn" id="gear" aria-label="Impostazioni e backup"><svg><use href="#sliders"/></svg></button>
+    <div class="hbtns">
+      <a class="iconbtn wl" href="#/wish" aria-label="Lista desideri"><svg><use href="#star"/></svg><span class="cbadge" id="wishN"></span></a>
+      <button class="iconbtn" id="gear" aria-label="Impostazioni e backup"><svg><use href="#sliders"/></svg></button>
+    </div>
   </div>
   <a class="homeball" href="#/" aria-label="Tutti i set"></a>
 </header>
@@ -360,7 +381,7 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
   <div class="sheet-bg" id="sheetBg"></div>
   <div class="sheet-card">
     <h2>Il tuo album</h2>
-    <p class="note" style="margin:0 0 6px">Versione del 7 ottobre, n. 9</p>
+    <p class="note" style="margin:0 0 6px">Versione del 7 ottobre, n. 10</p>
     <p id="sumTxt"></p>
     <button class="btn pri" id="bExport">Salva backup</button>
     <button class="btn" id="bImport">Carica backup</button>
@@ -420,6 +441,7 @@ const st=id=>state.cards[id]||'';
 function setStatus(id,s){
   if(s) state.cards[id]=s; else delete state.cards[id];
   if(!LS.set('pkc.state',state)) toast('Non riesco a salvare su questo dispositivo');
+  updWishN();
 }
 function ownedBySet(){
   const m={};
@@ -471,10 +493,12 @@ const imgSrc=(c,q)=>c.img?`${c.img}/${q}.webp`:(c.imgEn?`${c.imgEn}/${q}.webp`:n
 const view=$('#view');
 let routeToken=0, homeScroll=0, homeQ='', setsData=null, enList=null, restored=false;
 let cur=null, flt='all', q='';
+let mode='home';
 
 function route(){
   const parts=location.hash.replace(/^#\/?/,'').split('/');
-  if(parts[0]==='set'&&parts[1]) showSet(decodeURIComponent(parts[1])); else showHome();
+  updWishN();
+  if(parts[0]==='set'&&parts[1]) showSet(decodeURIComponent(parts[1])); else if(parts[0]==='wish') showWish(); else showHome();
 }
 window.addEventListener('hashchange',()=>{ if(V.open) closeViewer(true,true); route(); });
 window.addEventListener('popstate',()=>{ if(V.open&&!(history.state&&history.state.viewer)) closeViewer(true); });
@@ -487,7 +511,7 @@ view.addEventListener('click',e=>{
 
 /* ================= Home ================= */
 function showHome(){
-  const my=++routeToken; restored=false; setsData=null;
+  const my=++routeToken; mode='home'; restored=false; setsData=null;
   view.innerHTML=`
     <div class="tools">
       <input id="hq" class="search" type="search" enterkeyhint="search" placeholder="Cerca un set" autocomplete="off" value="${esc(homeQ)}" aria-label="Cerca un set">
@@ -572,7 +596,7 @@ function paintSets(){
 
 /* ================= Pagina set ================= */
 function showSet(id){
-  const my=++routeToken; flt='all'; q=''; cur=null;
+  const my=++routeToken; mode='set'; flt='all'; q=''; cur=null;
   view.innerHTML=`
     <a class="back" href="#/">‹ Tutti i set</a>
     <div class="banner" id="banner"><div class="sk-set" style="width:100%;height:70px"></div></div>
@@ -584,7 +608,7 @@ function showSet(id){
   $('#cq').addEventListener('input',e=>{q=e.target.value;paintGrid()});
   grid.addEventListener('click',e=>{
     const cd=e.target.closest('.cd'); if(!cd||!cd.dataset.id) return;
-    if(e.target.closest('.ownbtn')) toggleOwn(cd,e.target.closest('.ownbtn')); else openViewer(cd.dataset.id,cd);
+    if(e.target.closest('.ownbtn')) toggleOwn(cd,e.target.closest('.ownbtn')); else if(e.target.closest('.wishbtn')) toggleWish(cd,e.target.closest('.wishbtn')); else openViewer(cd.dataset.id,cd);
   });
   grid.addEventListener('load',e=>{ if(e.target.tagName==='IMG') e.target.parentElement.classList.add('ld'); },true);
   grid.addEventListener('error',e=>{
@@ -637,6 +661,7 @@ function paintChips(){
 }
 function matchF(c){
   const s=st(c.id);
+  if(mode==='wish') return s==='w';
   if(flt==='miss'&&(s==='o'||s==='x')) return false;
   if(flt==='own'&&s!=='o') return false;
   if(flt==='want'&&s!=='w') return false;
@@ -657,10 +682,11 @@ function cdHTML(c){
       <svg class="back"><use href="#ball"/></svg>
       <span class="badge"><svg class="i-w"><use href="#star"/></svg><svg class="i-x"><use href="#x"/></svg></span>
       ${ptagHTML(c.id)}
+      <button class="wishbtn" aria-label="Da cercare"><svg><use href="#star"/></svg></button>
       <button class="ownbtn" aria-label="Ce l'ho"><svg><use href="#ball"/></svg></button>
     </div>
     <div class="nm"><span class="n">${esc(c.n)}</span><span class="it">${esc(c.it)}</span></div>
-    <div class="en">${sub}</div>
+    <div class="en">${sub}</div>${mode==='wish'&&wsort==='name'&&c.setName?`<div class="setl">${esc(c.setName)}</div>`:''}
   </div>`;
 }
 function paintGrid(){
@@ -674,14 +700,14 @@ const gridCard=id=>{const g=$('#grid');return g&&[...g.children].find(x=>x.datas
 function applyStatus(id,s){
   setStatus(id,s);
   const el=gridCard(id); if(el) el.dataset.s=s;
-  paintBanner(); paintChips();
+  paintBanner(); paintChips(); paintWishTop();
 }
 function toggleOwn(cd,btn){
   const id=cd.dataset.id, s=st(id)==='o'?'':'o';
   applyStatus(id,s);
   btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
   const c=byId(id);
-  if(c&&!matchF(c)){ cd.classList.add('leaving'); setTimeout(()=>{ cd.remove(); const g=$('#grid'); if(g&&!g.children.length) paintGrid(); },280); }
+  if(c&&!matchF(c)){ cd.classList.add('leaving'); setTimeout(()=>{ cd.remove(); afterRemove(); },280); }
 }
 
 /* ================= Visualizzatore 3D ================= */
@@ -689,7 +715,7 @@ const viewer=$('#viewer'), vFly=$('#vFly'), vTilt=$('#vTilt'), vImg=$('#vImg'), 
 const V={open:false,list:[],i:0,dirty:false};
 
 function openViewer(id,srcEl){
-  V.list=filtered().map(c=>c.id); V.i=Math.max(0,V.list.indexOf(id)); V.open=true; V.dirty=false;
+  V.list=(mode==='wish'?wishFiltered():filtered()).map(c=>c.id); V.i=Math.max(0,V.list.indexOf(id)); V.open=true; V.dirty=false;
   document.documentElement.classList.add('noscroll');
   viewer.classList.add('open');
   fillViewer(0);
@@ -714,7 +740,7 @@ function closeViewer(fromPop,instant){
     viewer.classList.remove('open'); document.documentElement.classList.remove('noscroll');
     vFly.style.transition='none'; vFly.style.transform='none';
     document.querySelectorAll('.cd.lifted').forEach(x=>x.classList.remove('lifted'));
-    if(V.dirty&&cur&&!instant){ V.dirty=false; paintBanner(); paintChips(); paintGrid(); }
+    if(V.dirty&&cur&&!instant){ V.dirty=false; if(mode==='wish') paintWish(); else { paintBanner(); paintChips(); paintGrid(); } }
   };
   if(el&&!instant){
     const r=el.querySelector('.im').getBoundingClientRect(), t=vFly.getBoundingClientRect();
@@ -738,10 +764,10 @@ function fillViewer(dir){
   $('#vIt').textContent=c.it;
   $('#vEn').textContent=c.en||c.it;
   viewer.classList.toggle('isph',!!c.ph);
-  $('#vMeta').textContent=c.ph?`Carta ${c.n} su ${cur.total}. Dettagli non ancora disponibili, ma puoi segnarla.`:`Carta ${c.n} su ${cur.official||cur.total}, ${cur.name}`;
+  $('#vMeta').textContent=c.ph?`Carta ${c.n} su ${cur.total}. Dettagli non ancora disponibili, ma puoi segnarla.`:`Carta ${c.n} su ${c.setTotal||cur.official||cur.total}, ${c.setName||cur.name}`;
   $('#vCount').textContent=`${V.i+1} di ${V.list.length}`;
   $('#vPrev').disabled=V.i===0; $('#vNext').disabled=V.i===V.list.length-1;
-  const nm=c.en||c.it, sn=cur.nameEn||cur.name;
+  const nm=c.en||c.it, sn=c.setNameEn||c.setName||cur.nameEn||cur.name;
   $('#vEbay').href='https://www.ebay.it/sch/i.html?_nkw='+encodeURIComponent(`pokemon ${nm} ${c.n} ${sn}`);
   $('#vVinted').href='https://www.vinted.it/catalog?search_text='+encodeURIComponent(`pokemon ${nm} ${sn}`);
   $('#vCm').href='https://www.cardmarket.com/it/Pokemon/Products/Search?searchString='+encodeURIComponent(nm);
@@ -816,6 +842,127 @@ const endDrag=()=>{ drag=null; resetTilt(); };
 vStage.addEventListener('pointerup',endDrag);
 vStage.addEventListener('pointercancel',endDrag);
 vStage.addEventListener('pointerleave',e=>{ if(!drag&&e.pointerType==='mouse') resetTilt(); });
+
+/* ================= Lista desideri ================= */
+let wq='', wset='all', wsort=LS.get('pkc.wsort')||'set', wishCur=null, wfail=0;
+const wishKeys=()=>Object.keys(state.cards).filter(k=>state.cards[k]==='w'&&k.lastIndexOf('-')>0);
+const setOf=k=>k.slice(0,k.lastIndexOf('-'));
+function updWishN(){
+  const el=$('#wishN'); if(!el) return;
+  const n=wishKeys().length; el.textContent=n>99?'99+':String(n); el.style.display=n?'block':'none';
+}
+async function getSetCached(id){
+  const k=`pkc.set.v2.${lang}.${id}`, c=LS.get(k);
+  if(c&&c.d&&c.d.cards) return c.d;
+  const d=await fetchSet(id); cacheSet(k,d); return d;
+}
+function setOrder(){
+  const m={}, l=(LS.get(`pkc.sets.${lang}`)||{}).d;
+  if(Array.isArray(l)) l.forEach((x,i)=>{m[x.id]=i});
+  return m;
+}
+const wishCards=()=>wishCur?wishCur.cards.filter(c=>st(c.id)==='w'):[];
+const numCmp=(a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true});
+function wishFiltered(){
+  if(!wishCur) return [];
+  const nq=norm(wq.trim()), ord=setOrder();
+  const l=wishCards().filter(c=>(wset==='all'||c.setId===wset)&&(!nq||norm(c.it).includes(nq)||norm(c.en).includes(nq)||norm(c.n).includes(nq)||norm(c.setName).includes(nq)));
+  if(wsort==='name') l.sort((a,b)=>norm(a.it||a.en).localeCompare(norm(b.it||b.en))||numCmp(a.n,b.n));
+  else l.sort((a,b)=>((ord[b.setId]??-1)-(ord[a.setId]??-1))||a.setName.localeCompare(b.setName)||a.setId.localeCompare(b.setId)||numCmp(a.n,b.n));
+  return l;
+}
+function paintWishTop(){
+  if(mode!=='wish'||!wishCur||!$('#wsub')) return;
+  const ws=wishCards(), sets=new Map(), ord=setOrder();
+  ws.forEach(c=>{ const o=sets.get(c.setId); if(o) o.n++; else sets.set(c.setId,{id:c.setId,name:c.setName,n:1}); });
+  const pr=ws.filter(c=>lastPrice(c.id)), sum=pr.reduce((a,c)=>a+lastPrice(c.id).p,0);
+  $('#wsub').textContent=ws.length?`${ws.length} ${ws.length===1?'carta':'carte'} da comprare in ${sets.size} ${sets.size===1?'espansione':'espansioni'}`:'Nessuna carta in lista';
+  $('#wsum').innerHTML=(pr.length?`<span>Prezzi annotati per <b>${pr.length}</b></span><span>Somma degli ultimi prezzi <b>${esc(eur(sum))}</b></span>`:'')+(wfail?`<span class="w">Dettagli non caricati per ${wfail} espansioni</span>`:'');
+  const el=$('#wchips'), sl=el.scrollLeft;
+  const list=[...sets.values()].sort((a,b)=>((ord[b.id]??-1)-(ord[a.id]??-1))||a.name.localeCompare(b.name));
+  el.innerHTML=`<button class="chip${wset==='all'?' on':''}" data-w="all">Tutte <b>${ws.length}</b></button>`+list.map(x=>`<button class="chip${wset===x.id?' on':''}" data-w="${esc(x.id)}"><span class="cl">${esc(x.name)}</span> <b>${x.n}</b></button>`).join('');
+  el.scrollLeft=sl;
+}
+function paintWish(){
+  if(mode!=='wish'||!wishCur) return;
+  const g=$('#grid'); if(!g) return;
+  if(wset!=='all'&&!wishCards().some(c=>c.setId===wset)) wset='all';
+  paintWishTop();
+  if(!wishCards().length){ g.innerHTML='<div class="empty">La lista è vuota.<br>Tocca la stella su una carta per aggiungerla: la ritrovi qui, insieme a quelle delle altre espansioni.</div>'; return; }
+  const list=wishFiltered();
+  if(!list.length){ g.innerHTML='<div class="empty">Nessuna carta con questi filtri.</div>'; return; }
+  const cnt={}; list.forEach(c=>{cnt[c.setId]=(cnt[c.setId]||0)+1});
+  let h='', last=null;
+  list.forEach(c=>{
+    if(wsort==='set'&&wset==='all'&&c.setId!==last){ last=c.setId; h+=`<div class="ghead">${esc(c.setName)} <b>${cnt[c.setId]}</b></div>`; }
+    h+=cdHTML(c);
+  });
+  g.innerHTML=h;
+}
+function toggleWish(cd,btn){
+  const id=cd.dataset.id, s=st(id)==='w'?'':'w';
+  applyStatus(id,s);
+  btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
+  if(navigator.vibrate) navigator.vibrate(10);
+  const c=byId(id);
+  if(c&&!matchF(c)){ cd.classList.add('leaving'); setTimeout(()=>{ cd.remove(); afterRemove(); },280); }
+}
+function afterRemove(){
+  const g=$('#grid'); if(!g) return;
+  [...g.querySelectorAll('.ghead')].forEach(h=>{ const n=h.nextElementSibling; if(!n||n.classList.contains('ghead')) h.remove(); });
+  if(!g.querySelector('.cd')){ if(mode==='wish') paintWish(); else paintGrid(); }
+}
+function showWish(){
+  const my=++routeToken; mode='wish'; cur=null; wishCur=null; wfail=0;
+  view.innerHTML=`
+    <a class="back" href="#/">‹ Tutti i set</a>
+    <div class="banner wbanner">
+      <div class="b-logo"><svg style="width:54px;height:54px;color:#FFCB05"><use href="#star"/></svg></div>
+      <div class="b-txt"><h1>Lista desideri</h1><div class="sub" id="wsub">Carico le carte...</div><div class="row" id="wsum"></div></div>
+    </div>
+    <div class="wtools">
+      <input id="wq" class="search" type="search" enterkeyhint="search" placeholder="Cerca nome, numero o espansione" autocomplete="off" value="${esc(wq)}" aria-label="Cerca nella lista">
+      <div class="seg" role="group" aria-label="Ordine"><button data-o="set" class="${wsort==='set'?'on':''}">Set</button><button data-o="name" class="${wsort==='name'?'on':''}">A-Z</button></div>
+    </div>
+    <div class="fbar"><div class="chips" id="wchips"></div></div>
+    <div class="cards" id="grid">${'<div class="cd"><div class="im"></div></div>'.repeat(9)}</div>`;
+  window.scrollTo(0,0);
+  const grid=$('#grid');
+  $('#wq').addEventListener('input',e=>{ wq=e.target.value; paintWish(); });
+  view.querySelectorAll('.wtools .seg button').forEach(b=>b.addEventListener('click',()=>{
+    wsort=b.dataset.o; LS.set('pkc.wsort',wsort);
+    view.querySelectorAll('.wtools .seg button').forEach(x=>x.classList.toggle('on',x===b)); paintWish();
+  }));
+  $('#wchips').addEventListener('click',e=>{ const b=e.target.closest('[data-w]'); if(!b) return; wset=b.dataset.w; paintWish(); });
+  grid.addEventListener('click',e=>{
+    const cd=e.target.closest('.cd'); if(!cd||!cd.dataset.id) return;
+    if(e.target.closest('.ownbtn')) toggleOwn(cd,e.target.closest('.ownbtn')); else if(e.target.closest('.wishbtn')) toggleWish(cd,e.target.closest('.wishbtn')); else openViewer(cd.dataset.id,cd);
+  });
+  grid.addEventListener('load',e=>{ if(e.target.tagName==='IMG') e.target.parentElement.classList.add('ld'); },true);
+  grid.addEventListener('error',e=>{
+    const im=e.target; if(im.tagName!=='IMG') return;
+    if(im.dataset.alt&&im.src!==im.dataset.alt){ im.src=im.dataset.alt; im.dataset.alt=''; }
+    else { im.parentElement.classList.add('bad'); }
+  },true);
+  const keys=wishKeys();
+  const finish=(sets)=>{
+    if(my!==routeToken) return;
+    const cards=keys.map(k=>{
+      const sid=setOf(k), d=sets[sid], f=d&&d.cards.find(c=>c.id===k), n=k.slice(k.lastIndexOf('-')+1);
+      const b=f?{...f}:{id:k,n,it:'Carta '+n,en:'',img:null,imgEn:null,ph:true};
+      b.setId=sid; b.setName=d?d.name:sid; b.setNameEn=d?(d.nameEn||d.name):sid; b.setTotal=d?(d.official||d.total):0;
+      return b;
+    });
+    wfail=Object.values(sets).filter(x=>!x).length;
+    wishCur={id:'wish',name:'Lista desideri',nameEn:'',official:0,total:cards.length,cards};
+    cur=wishCur; paintWish();
+  };
+  if(!keys.length){ finish({}); return; }
+  const sids=[...new Set(keys.map(setOf))];
+  Promise.all(sids.map(sid=>getSetCached(sid).then(d=>[sid,d],()=>[sid,null]))).then(r=>{
+    const sets={}; r.forEach(([sid,d])=>{sets[sid]=d}); finish(sets);
+  });
+}
 
 /* ================= Registro prezzi ================= */
 const SRC=[['Vinted','#0F9E9E'],['eBay','#D9302A'],['Cardmarket','#2A4FA8'],['Catawiki','#E58A00'],['Altro','#6B7595']];
