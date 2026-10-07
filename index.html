@@ -218,6 +218,38 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
 .sheet-bg{position:absolute;inset:0;background:rgba(10,14,39,.55)}
 .sheet-card{position:relative;width:100%;max-width:520px;background:var(--paper);border-radius:26px 26px 0 0;padding:22px 18px calc(18px + env(safe-area-inset-bottom));animation:up .3s cubic-bezier(.2,.9,.3,1)}
 @keyframes up{from{transform:translateY(40px);opacity:0}}
+/* registro prezzi */
+.pbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;max-width:420px;margin:0 auto 10px;border:2px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.08);color:#fff;border-radius:16px;padding:11px 12px;font:800 14px var(--font-b)}
+.pbtn:active{transform:scale(.97)}
+.pbtn b{color:var(--yellow);font-weight:800}
+.ptag{position:absolute;left:4px;bottom:4px;background:rgba(20,26,56,.84);color:#fff;font:800 11px var(--font-b);padding:2px 7px;border-radius:999px}
+.pcard{max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.pcard input[type=text],.pcard input[type=date]{width:100%;height:46px;border-radius:14px;border:2px solid var(--line);background:#fff;padding:0 14px;
+  font:700 16px var(--font-b);color:var(--ink);-webkit-appearance:none;appearance:none;min-width:0}
+.pcard input:focus{outline:none;border-color:var(--blue)}
+.prow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.srcs{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px}
+.src{display:flex;align-items:center;gap:6px;border:2px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font:800 13px var(--font-b)}
+.src i{width:10px;height:10px;border-radius:50%;display:block}
+.src.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.pchart{background:#fff;border:2px solid var(--line);border-radius:18px;padding:8px 6px 4px;margin:12px 0 10px}
+.pchart svg{width:100%;height:auto}
+.pempty{padding:26px 14px;text-align:center;color:var(--mute);font-size:14px}
+.pstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:12px}
+.pstats div{background:#fff;border:2px solid var(--line);border-radius:12px;padding:6px 4px;text-align:center}
+.pstats small{display:block;color:var(--mute);font-size:11px;font-weight:700}
+.pstats b{font:400 15px var(--font-d)}
+.pform{margin-top:6px}
+.plist{margin-top:14px}
+.pit{display:flex;align-items:center;gap:10px;padding:9px 2px;border-top:1px solid var(--line)}
+.pit .pp{font:400 17px var(--font-d);min-width:74px}
+.pit .pm{flex:1;min-width:0;font-size:12px;color:var(--mute);line-height:1.3}
+.pit .pm span{display:inline-flex;align-items:center;gap:5px;color:var(--ink);font-weight:800}
+.pit .pm i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.pit .pm em{display:block;font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pit button{border:0;background:#E9EEF8;width:32px;height:32px;border-radius:50%;color:var(--mute);display:grid;place-items:center;flex:none}
+.pit button svg{width:14px;height:14px}
 .sheet-card h2{margin:0 0 4px;font:400 24px var(--font-d)}
 .sheet-card p{margin:0;color:var(--mute);font-size:14px}
 .sheet-card .note{margin-top:14px;font-size:13px}
@@ -292,6 +324,7 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
       <a class="pill" id="vCata" target="_blank" rel="noopener">Catawiki</a>
       <a class="pill" id="vCm" target="_blank" rel="noopener">Cardmarket</a>
     </div>
+    <button class="pbtn" id="vPrices" type="button"><svg width="18" height="18"><use href="#star"/></svg><span id="vPricesTxt">Segna un prezzo</span></button>
     <div class="acts">
       <button class="act own" data-s="o"><svg><use href="#ball"/></svg>Ce l'ho</button>
       <button class="act want" data-s="w"><svg><use href="#star"/></svg>La cerco</button>
@@ -300,12 +333,34 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
   </div>
 </div>
 
+<!-- Registro prezzi -->
+<div class="sheet" id="psheet">
+  <div class="sheet-bg" id="psBg"></div>
+  <div class="sheet-card pcard">
+    <h2 id="psTitle">Prezzi</h2>
+    <p id="psSub"></p>
+    <div class="pchart" id="psChart"></div>
+    <div class="pstats" id="psStats"></div>
+    <form class="pform" id="psForm" autocomplete="off">
+      <div class="prow">
+        <input id="psPrice" type="text" inputmode="decimal" placeholder="Prezzo in €" aria-label="Prezzo in euro">
+        <input id="psDate" type="date" aria-label="Data">
+      </div>
+      <div class="srcs" id="psSrcs"></div>
+      <div style="margin-bottom:8px"><input id="psNote" type="text" placeholder="Nota (facoltativa), es. condizione, venditore" aria-label="Nota"></div>
+      <button class="btn pri" type="submit" style="margin-top:0">Aggiungi prezzo</button>
+    </form>
+    <div class="plist" id="psList"></div>
+    <button class="btn" id="psClose" type="button">Chiudi</button>
+  </div>
+</div>
+
 <!-- Impostazioni -->
 <div class="sheet" id="sheet">
   <div class="sheet-bg" id="sheetBg"></div>
   <div class="sheet-card">
     <h2>Il tuo album</h2>
-    <p class="note" style="margin:0 0 6px">Versione del 7 ottobre, n. 8</p>
+    <p class="note" style="margin:0 0 6px">Versione del 7 ottobre, n. 9</p>
     <p id="sumTxt"></p>
     <button class="btn pri" id="bExport">Salva backup</button>
     <button class="btn" id="bImport">Carica backup</button>
@@ -360,6 +415,7 @@ function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');
 /* cards: id -> 'o' (ce l'ho) | 'w' (la cerco) | 'x' (non mi interessa) */
 let state=LS.get('pkc.state')||{cards:{}};
 if(!state.cards) state.cards={};
+if(!state.prices||typeof state.prices!=='object') state.prices={};
 const st=id=>state.cards[id]||'';
 function setStatus(id,s){
   if(s) state.cards[id]=s; else delete state.cards[id];
@@ -600,6 +656,7 @@ function cdHTML(c){
       ${src?`<img loading="lazy" decoding="async" alt="${esc(c.it)}" src="${esc(src)}" data-alt="${esc(alt)}">`:''}
       <svg class="back"><use href="#ball"/></svg>
       <span class="badge"><svg class="i-w"><use href="#star"/></svg><svg class="i-x"><use href="#x"/></svg></span>
+      ${ptagHTML(c.id)}
       <button class="ownbtn" aria-label="Ce l'ho"><svg><use href="#ball"/></svg></button>
     </div>
     <div class="nm"><span class="n">${esc(c.n)}</span><span class="it">${esc(c.it)}</span></div>
@@ -650,7 +707,7 @@ function openViewer(id,srcEl){
   history.pushState({viewer:1},'');
 }
 function closeViewer(fromPop,instant){
-  if(!V.open) return; V.open=false;
+  if(!V.open) return; V.open=false; $('#psheet').classList.remove('on');
   viewer.classList.remove('show');
   const el=gridCard(V.list[V.i]);
   const finish=()=>{
@@ -698,6 +755,7 @@ vImg.addEventListener('error',()=>{
   if(alt&&vImg.src!==alt) vImg.src=alt; else vTilt.classList.add('bad');
 });
 function syncActs(){
+  syncPriceBtn();
   const s=st(V.list[V.i]);
   viewer.querySelectorAll('.act').forEach(b=>b.classList.toggle('on',b.dataset.s===s));
 }
@@ -712,7 +770,7 @@ $('#vPrev').addEventListener('click',()=>go(-1));
 $('#vNext').addEventListener('click',()=>go(1));
 $('#vClose').addEventListener('click',()=>closeViewer(false));
 document.addEventListener('keydown',e=>{
-  if(!V.open) return;
+  if(!V.open||$('#psheet').classList.contains('on')) return;
   if(e.key==='Escape') closeViewer(false); else if(e.key==='ArrowLeft') go(-1); else if(e.key==='ArrowRight') go(1);
 });
 $('#vCopy').addEventListener('click',async()=>{
@@ -759,6 +817,105 @@ vStage.addEventListener('pointerup',endDrag);
 vStage.addEventListener('pointercancel',endDrag);
 vStage.addEventListener('pointerleave',e=>{ if(!drag&&e.pointerType==='mouse') resetTilt(); });
 
+/* ================= Registro prezzi ================= */
+const SRC=[['Vinted','#0F9E9E'],['eBay','#D9302A'],['Cardmarket','#2A4FA8'],['Catawiki','#E58A00'],['Altro','#6B7595']];
+const srcColor=n=>(SRC.find(x=>x[0]===n)||SRC[4])[1];
+const eur=v=>v.toLocaleString('it-IT',{style:'currency',currency:'EUR'});
+const fmtD=d=>String(d).split('-').reverse().join('/');
+const fmtShort=d=>{const a=String(d).split('-');return a[2]+'/'+a[1]};
+const todayStr=()=>{const t=new Date();return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')};
+const pricesOf=id=>Array.isArray(state.prices[id])?state.prices[id]:[];
+const lastPrice=id=>{const a=pricesOf(id);return a.length?a[a.length-1]:null};
+function ptagHTML(id){const l=lastPrice(id);return l?`<span class="ptag">${esc(eur(l.p))}</span>`:''}
+function refreshTag(id){
+  const el=gridCard(id); if(!el) return;
+  const im=el.querySelector('.im'); if(!im) return;
+  const o=im.querySelector('.ptag'); if(o) o.remove();
+  const h=ptagHTML(id); if(h) im.insertAdjacentHTML('beforeend',h);
+}
+function syncPriceBtn(){
+  const id=V.list[V.i]; if(!id) return;
+  const a=pricesOf(id), l=a.length?a[a.length-1]:null;
+  $('#vPricesTxt').innerHTML=l?`Prezzi seguiti: ultimo <b>${esc(eur(l.p))}</b> (${a.length})`:'Segna un prezzo e segui l\'andamento';
+}
+let psId=null, psSrc=LS.get('pkc.lastsrc')||'Vinted';
+const psheet=$('#psheet');
+function chartSVG(arr){
+  if(!arr.length) return '<div class="pempty">Ancora nessun prezzo. Aggiungine uno qui sotto e vedrai l\'andamento.</div>';
+  const W=320,H=176,L=46,R=14,T=14,B=26;
+  const ts=arr.map(e=>Date.parse(e.d+'T12:00:00Z'));
+  const t0=Math.min(...ts), t1=Math.max(...ts);
+  let lo=Math.min(...arr.map(e=>e.p)), hi=Math.max(...arr.map(e=>e.p));
+  if(hi-lo<0.01){lo=Math.max(0,lo-1);hi=hi+1} else {const pad=(hi-lo)*.18;lo=Math.max(0,lo-pad);hi=hi+pad}
+  const X=t=>t1===t0?(L+W-R)/2:L+(t-t0)/(t1-t0)*(W-L-R);
+  const Y=v=>T+(1-(v-lo)/(hi-lo))*(H-T-B);
+  const dec=(hi-lo)<10?2:0, fv=v=>v.toFixed(dec).replace('.',',');
+  let g='';
+  [lo,(lo+hi)/2,hi].forEach(v=>{
+    const y=Y(v).toFixed(1);
+    g+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="#E1E8F5" stroke-width="1"/><text x="${L-6}" y="${(+y+4).toFixed(1)}" text-anchor="end" font-size="10" font-weight="700" fill="#6B7595">${fv(v)}</text>`;
+  });
+  const pts=arr.map((e,i)=>[X(ts[i]),Y(e.p)]);
+  const path=pts.length>1?`<polyline fill="none" stroke="#2A4FA8" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" points="${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}"/>`:'';
+  const dots=arr.map((e,i)=>`<circle cx="${pts[i][0].toFixed(1)}" cy="${pts[i][1].toFixed(1)}" r="5.5" fill="${srcColor(e.s)}" stroke="#fff" stroke-width="2"/>`).join('');
+  const first=arr[0].d, last=arr[arr.length-1].d;
+  const xl=t1===t0?`<text x="${(L+W-R)/2}" y="${H-7}" text-anchor="middle" font-size="10" font-weight="700" fill="#6B7595">${fmtShort(first)}</text>`
+    :`<text x="${L}" y="${H-7}" text-anchor="start" font-size="10" font-weight="700" fill="#6B7595">${fmtShort(first)}</text><text x="${W-R}" y="${H-7}" text-anchor="end" font-size="10" font-weight="700" fill="#6B7595">${fmtShort(last)}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Andamento dei prezzi annotati">${g}${path}${dots}${xl}</svg>`;
+}
+function paintPrices(){
+  const c=byId(psId), arr=pricesOf(psId);
+  $('#psTitle').textContent=c?c.it:'Prezzi';
+  $('#psSub').textContent=c?`Annota i prezzi che vedi nel tempo (in euro). Salvati solo su questo telefono.`:'';
+  $('#psChart').innerHTML=chartSVG(arr);
+  const st2=$('#psStats');
+  if(arr.length){
+    const v=arr.map(e=>e.p), l=v[v.length-1];
+    let var_='';
+    if(arr.length>1&&v[0]>0){const d=(l-v[0])/v[0]*100;var_=(d>0?'+':'')+d.toFixed(0)+'%'}
+    st2.innerHTML=`<div><small>Ultimo</small><b>${esc(eur(l))}</b></div><div><small>Minimo</small><b>${esc(eur(Math.min(...v)))}</b></div><div><small>Massimo</small><b>${esc(eur(Math.max(...v)))}</b></div><div><small>Variazione</small><b>${var_||'-'}</b></div>`;
+  } else st2.innerHTML='';
+  $('#psSrcs').innerHTML=SRC.map(([n,col])=>`<button type="button" class="src${psSrc===n?' on':''}" data-s="${n}"><i style="background:${col}"></i>${n}</button>`).join('');
+  $('#psList').innerHTML=arr.map((e,i)=>({e,i})).reverse().map(({e,i})=>
+    `<div class="pit"><div class="pp">${esc(eur(e.p))}</div><div class="pm"><span><i style="background:${srcColor(e.s)}"></i>${esc(e.s)}</span> · ${esc(fmtD(e.d))}${e.n?`<em>${esc(e.n)}</em>`:''}</div><button type="button" data-del="${i}" aria-label="Elimina prezzo"><svg><use href="#x"/></svg></button></div>`).join('');
+}
+function openPrices(){
+  psId=V.list[V.i]; if(!psId) return;
+  $('#psPrice').value=''; $('#psNote').value=''; $('#psDate').value=todayStr();
+  paintPrices(); psheet.classList.add('on'); psheet.querySelector('.pcard').scrollTop=0;
+}
+function closePrices(){ psheet.classList.remove('on'); }
+$('#vPrices').addEventListener('click',openPrices);
+$('#psClose').addEventListener('click',closePrices);
+$('#psBg').addEventListener('click',closePrices);
+$('#psSrcs').addEventListener('click',e=>{
+  const b=e.target.closest('.src'); if(!b) return;
+  psSrc=b.dataset.s; LS.set('pkc.lastsrc',psSrc); paintPrices();
+});
+$('#psForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const raw=$('#psPrice').value.trim().replace(/€/g,'').replace(/\s/g,'').replace(',','.');
+  const p=Math.round(parseFloat(raw)*100)/100;
+  if(!isFinite(p)||p<=0||p>=100000){ toast('Scrivi un prezzo valido, per esempio 12,50'); $('#psPrice').focus(); return; }
+  const d=$('#psDate').value||todayStr();
+  const arr=pricesOf(psId).slice();
+  arr.push({d,p,s:psSrc,n:$('#psNote').value.trim().slice(0,80)});
+  arr.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
+  state.prices[psId]=arr;
+  if(!LS.set('pkc.state',state)) toast('Non riesco a salvare su questo dispositivo'); else toast('Prezzo aggiunto');
+  $('#psPrice').value=''; $('#psNote').value='';
+  paintPrices(); refreshTag(psId); syncPriceBtn();
+});
+$('#psList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-del]'); if(!b) return;
+  const arr=pricesOf(psId).slice(), i=+b.dataset.del;
+  if(!arr[i]||!confirm(`Eliminare il prezzo ${eur(arr[i].p)} del ${fmtD(arr[i].d)}?`)) return;
+  arr.splice(i,1);
+  if(arr.length) state.prices[psId]=arr; else delete state.prices[psId];
+  LS.set('pkc.state',state);
+  paintPrices(); refreshTag(psId); syncPriceBtn();
+});
+
 /* ================= Impostazioni e backup ================= */
 const sheet=$('#sheet');
 function openSheet(){
@@ -770,7 +927,7 @@ $('#gear').addEventListener('click',openSheet);
 $('#bClose').addEventListener('click',()=>sheet.classList.remove('on'));
 $('#sheetBg').addEventListener('click',()=>sheet.classList.remove('on'));
 $('#bExport').addEventListener('click',()=>{
-  const data={app:'album-carte-pokemon',v:1,exported:new Date().toISOString(),cards:state.cards};
+  const data={app:'album-carte-pokemon',v:2,exported:new Date().toISOString(),cards:state.cards,prices:state.prices};
   const blob=new Blob([JSON.stringify(data)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download=`album-carte-${new Date().toISOString().slice(0,10)}.json`;
@@ -784,8 +941,10 @@ $('#fImport').addEventListener('change',async e=>{
     const d=JSON.parse(await f.text());
     if(!d||typeof d.cards!=='object') throw new Error('formato');
     const n=Object.values(d.cards).filter(x=>x==='o').length;
-    if(!confirm(`Sostituire il tuo album con il backup? Contiene ${n} carte che hai.`)) return;
-    state={cards:d.cards}; LS.set('pkc.state',state);
+    const pr=(d.prices&&typeof d.prices==='object')?d.prices:{};
+    const np=Object.values(pr).reduce((a,x)=>a+(Array.isArray(x)?x.length:0),0);
+    if(!confirm(`Sostituire il tuo album con il backup? Contiene ${n} carte che hai e ${np} prezzi annotati.`)) return;
+    state={cards:d.cards,prices:pr}; LS.set('pkc.state',state);
     sheet.classList.remove('on'); toast('Backup caricato'); route();
   }catch(err){ toast('File non valido'); }
 });
