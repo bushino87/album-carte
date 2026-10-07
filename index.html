@@ -55,8 +55,8 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
 .seg button{border:0;background:none;padding:0 14px;border-radius:19px;font:800 14px var(--font-b);color:var(--mute)}
 .seg button.on{background:var(--ink);color:#fff}
 
-.sets{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-@media(min-width:620px){.sets{grid-template-columns:repeat(3,1fr)}}
+.sets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(min-width:620px){.sets{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .set{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;background:#fff;border:2px solid var(--line);
   border-radius:20px;padding:14px 12px 12px;text-align:center;overflow:hidden;transition:transform .15s}
 .set:active{transform:scale(.97)}
@@ -106,10 +106,10 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
 .chip b{font-weight:800;opacity:.55}
 .chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
 .chip svg{width:17px;height:17px}
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 10px;margin-top:12px}
-@media(min-width:560px){.cards{grid-template-columns:repeat(4,1fr)}}
-@media(min-width:760px){.cards{grid-template-columns:repeat(5,1fr)}}
-.cd{position:relative;cursor:pointer;transition:opacity .28s,transform .28s}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 10px;margin-top:12px}
+@media(min-width:560px){.cards{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(min-width:760px){.cards{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.cd{min-width:0;position:relative;cursor:pointer;transition:opacity .28s,transform .28s}
 .cd.leaving{opacity:0;transform:scale(.8)}
 .cd.lifted .im{visibility:hidden}
 .im{position:relative;aspect-ratio:245/337;border-radius:6%/4.4%;
@@ -198,7 +198,7 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
 .v-en .nmn{font:800 17px var(--font-b);color:var(--yellow)}
 .pill{border:0;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;padding:7px 13px;font:800 13px var(--font-b);display:inline-flex;align-items:center;gap:6px}
 .pill svg{width:15px;height:15px}
-.acts{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;max-width:420px;margin:0 auto}
+.acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;max-width:420px;margin:0 auto}
 .act{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px 9px;border-radius:16px;
   border:2px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);font:800 13px var(--font-b);color:#fff;transition:transform .15s,background .2s}
 .act:active{transform:scale(.95)}
@@ -305,7 +305,7 @@ main{max-width:760px;margin:0 auto;padding:36px 14px calc(44px + env(safe-area-i
   <div class="sheet-bg" id="sheetBg"></div>
   <div class="sheet-card">
     <h2>Il tuo album</h2>
-    <p class="note" style="margin:0 0 6px">Versione del 5 ottobre, n. 7</p>
+    <p class="note" style="margin:0 0 6px">Versione del 7 ottobre, n. 8</p>
     <p id="sumTxt"></p>
     <button class="btn pri" id="bExport">Salva backup</button>
     <button class="btn" id="bImport">Carica backup</button>
